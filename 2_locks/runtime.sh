@@ -1,20 +1,21 @@
 make
 cd target 2> /dev/null || mkdir target && cd target 2> /dev/null
 echo 123 > fileA 
+rm fileA.lck 2> /dev/null
 for f in stats_*; do
     if [[ -f "$f" ]]; then
         rm $f
     fi
 done
 
-pids=()   
+pids=()
 
 function lockfile {
     success=0
     failed=0
     while true;
 do
-    ../task.out -s 10 fileA > /dev/null
+    ../task.out -s 1 fileA > /dev/null
     if [ $? = 0 ]; then
         (( success = success + 1 ))
     else
@@ -27,7 +28,7 @@ for j in {1..10}; do
     lockfile $j &
     pids+=($!)
 done
-sleep 20
+sleep 300
 for jj in ${pids[@]}; do
     kill $jj
 done

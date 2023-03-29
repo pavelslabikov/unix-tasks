@@ -8,6 +8,7 @@
 #include <math.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <time.h>
 
 int main(int argc, char *argv[])
 {
@@ -18,14 +19,19 @@ int main(int argc, char *argv[])
     }
 
     char *sleeptime = NULL;
+    char *pollinterval = NULL;
     int res = 0;
-    while ((res = getopt(argc, argv, "s:")) != -1)
+    while ((res = getopt(argc, argv, "s:p:")) != -1)
     {
 
         switch (res)
         {
         case 's':
             sleeptime = optarg;
+
+            break;
+        case 'p':
+            pollinterval = optarg;
 
             break;
         default:
@@ -37,12 +43,21 @@ int main(int argc, char *argv[])
     {
         sleeptime = "1";
     }
-    char *lockfilename;
+    if (!pollinterval)
+    {
+        pollinterval = "100";
+    }
+    char *lockfilename = malloc(9);
     strcpy(lockfilename, argv[optind]);
     strcat(lockfilename, ".lck");
+    
+    struct timespec tw;
+    tw.tv_nsec = atol(pollinterval) * 1000000L;
+    tw.tv_sec = 0L;
     while (access(lockfilename, F_OK) == 0)
     {
-        sleep(1);
+        nanosleep(&tw, NULL);
+        
     }
     printf("lock file not exists - acquiring lock\n");
     int lockfilefd = open(lockfilename, O_WRONLY | O_CREAT, 0777);
@@ -81,10 +96,14 @@ int main(int argc, char *argv[])
     }
     else
     {
-        printf("Error - lock file not exists when lock is actually acquired");
+        printf("Error - lock file not exists when lock is actually acquired\n");
         return -1;
     }
     printf("Successfully released lock");
 
+tw.tv_nsec = 100 * 1000000L;
+    tw.tv_sec = 0L;
+        nanosleep(&tw, NULL);
+ 
     return 0;
 }
